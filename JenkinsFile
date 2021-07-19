@@ -97,7 +97,7 @@ pipeline {
 					}
 				}
                 echo "---------------------------------------"
-                
+                sh('''
                 LOG_READ=$(cat snow_sql_output.log)
                 
                 if grep -q 'successfully' "snow_sql_output.log"; then
