@@ -49,45 +49,52 @@ pipeline {
                 git show --pretty=fuller ${GIT_COMMIT} | head -n 10 | tr -d '[:blank:]' | sed 's/commit/CommitID:/' | sed 's/</{/' | sed 's/>/}/' | sed 's/(//' | sed 's/)//' > git_details.txt     
                 COMMIT_ONELINER=`sed s/"'"//g git_details.txt | xargs`
                 cat git_details.txt
+				''')
 				
-				while read -r file || [[ -n "$file" ]]
-                do
-                  statement_type=`echo "$file" |  cut -d / -f 2`
-                  echo "statement_type: ${statement_type}, file: $file"
-                  if [ ${statement_type} = "ddl" ]; then
-                   for(i in ${env}){
-					   database_name=`echo "$file" |  cut -d / -f 1`
-					   echo " Environment: ${i})"
-					   database="${database_name}_'''+"${i}"+'''"
-					   exec_type=`echo "$file" |  cut -d / -f 3 | tr '[:lower:]' '[:upper:]'`
-					   echo " Database: ${database}"
-					   echo " File_path: ${file}"
-					   echo " Executing sql file $(cat ${file})."
-					   echo " Proceeding to create ${exec_type} in ${database} database .! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
-					   echo " Proceeding to create ${exec_type} in ${database} database .! " >> snow_sql_output.log
-					   exec_sql=`snowsql --dbname ${database} --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn  2>&1`
-					   echo " Snowsql execution ${exec_sql}"
-					   echo "${exec_sql}" >> snow_sql_output.log
+				script{
+					env.each(){
+						def fenv = it
+						sh('''
+						while read -r file || [[ -n "$file" ]]
+						do
+						  statement_type=`echo "$file" |  cut -d / -f 2`
+						  echo "statement_type: ${statement_type}, file: $file"
+						  if [ ${statement_type} = "ddl" ]; then
+							  database_name=`echo "$file" |  cut -d / -f 1`
+							   echo " Environment: '''+"${fenv}"+'''"
+							   database="${database_name}_'''+"${fenv}"+'''"
+							   exec_type=`echo "$file" |  cut -d / -f 3 | tr '[:lower:]' '[:upper:]'`
+							   echo " Database: ${database}"
+							   echo " File_path: ${file}"
+							   echo " Executing sql file $(cat ${file})."
+							   echo " Proceeding to create ${exec_type} in ${database} database .! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
+							   echo " Proceeding to create ${exec_type} in ${database} database .! " >> snow_sql_output.log
+							   exec_sql=`snowsql --dbname ${database} --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn  2>&1`
+							   echo " Snowsql execution ${exec_sql}"
+							   echo "${exec_sql}" >> snow_sql_output.log
+						  elif [ ${statement_type} = "release" ]; then
+						   echo " File_path: ${file}"
+						   echo " Executing release sql file $(cat ${file})."
+						   ## echo " Proceeding to create release query.! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
+						   echo " Proceeding to create release query.!" >> snow_sql_output.log
+						   exec_sql=`snowsql --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn 2>&1`
+						   echo " Snowsql execution ${exec_sql}"
+						   echo "${exec_sql}" >> snow_sql_output.log
+						  
+						  else
+						   echo " File_path: ${file}"
+						   echo " Executing  sql file $(cat ${file})."
+						   echo " Proceeding to create .! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
+						   echo " Proceeding to create .!" >> snow_sql_output.log
+						   exec_sql=`snowsql --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn 2>&1`
+						   echo " Snowsql execution ${exec_sql}"
+						   echo "${exec_sql}" >> snow_sql_output.log  
+						  fi
+						''')
 					}
-                  elif [ ${statement_type} = "release" ]; then
-                   echo " File_path: ${file}"
-                   echo " Executing release sql file $(cat ${file})."
-                   ## echo " Proceeding to create release query.! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
-                   echo " Proceeding to create release query.!" >> snow_sql_output.log
-                   exec_sql=`snowsql --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn 2>&1`
-                   echo " Snowsql execution ${exec_sql}"
-                   echo "${exec_sql}" >> snow_sql_output.log
-                  
-                  else
-                   echo " File_path: ${file}"
-                   echo " Executing  sql file $(cat ${file})."
-                   echo " Proceeding to create .! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
-                   echo " Proceeding to create .!" >> snow_sql_output.log
-                   exec_sql=`snowsql --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn 2>&1`
-                   echo " Snowsql execution ${exec_sql}"
-                   echo "${exec_sql}" >> snow_sql_output.log  
-                  fi
-				  
+				}
+				
+				sh('''		
                   echo "***************************************************"
                 done < ${WORKSPACE}/committed_files.txt
                 echo "---------------------------------------"
