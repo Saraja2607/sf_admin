@@ -24,8 +24,8 @@ pipeline {
         // Stage for Git Branches Checkout //
 		  stage('Checkout Git Branch') {
 			steps{
-             ##git branch: "${branch_name}",
-             ##url: "${code_repo_name}"
+             //git branch: "${branch_name}",
+             //url: "${code_repo_name}"
                     
              // Create Ansible admin directory and do a checkout from master //
              dir('CMT_CoP') {
