@@ -1,4 +1,4 @@
-def env = 'dev' 
+def env = ['dev','beta','prod'] 
 def app_name='snowflake'
 def repo_name='SnowflakeBoT'
 def snowsql_config="/home/ubuntu/.snowsql/config"
@@ -55,17 +55,20 @@ pipeline {
                   statement_type=`echo "$file" |  cut -d / -f 2`
                   echo "statement_type: ${statement_type}, file: $file"
                   if [ ${statement_type} = "ddl" ]; then
-                   database_name=`echo "$file" |  cut -d / -f 1`
-                   database="${database_name}_'''+"${env}"+'''"
-                   exec_type=`echo "$file" |  cut -d / -f 3 | tr '[:lower:]' '[:upper:]'`
-                   echo " Database: ${database}"
-                   echo " File_path: ${file}"
-                   echo " Executing sql file $(cat ${file})."
-                   echo " Proceeding to create ${exec_type} in ${database} database .! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
-                   echo " Proceeding to create ${exec_type} in ${database} database .! " >> snow_sql_output.log
-                   exec_sql=`snowsql --dbname ${database} --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn  2>&1`
-                   echo " Snowsql execution ${exec_sql}"
-                   echo "${exec_sql}" >> snow_sql_output.log
+                   for(i in ${env}){
+					   database_name=`echo "$file" |  cut -d / -f 1`
+					   echo " Environment: ${i})"
+					   database="${database_name}_'''+"${i}"+'''"
+					   exec_type=`echo "$file" |  cut -d / -f 3 | tr '[:lower:]' '[:upper:]'`
+					   echo " Database: ${database}"
+					   echo " File_path: ${file}"
+					   echo " Executing sql file $(cat ${file})."
+					   echo " Proceeding to create ${exec_type} in ${database} database .! " > ${WORKSPACE}/logs/${app_name}_${BUILD_NUMBER}.log
+					   echo " Proceeding to create ${exec_type} in ${database} database .! " >> snow_sql_output.log
+					   exec_sql=`snowsql --dbname ${database} --config '''+"${snowsql_config}"+''' --filename ${file} --connection sf_conn  2>&1`
+					   echo " Snowsql execution ${exec_sql}"
+					   echo "${exec_sql}" >> snow_sql_output.log
+					}
                   elif [ ${statement_type} = "release" ]; then
                    echo " File_path: ${file}"
                    echo " Executing release sql file $(cat ${file})."
