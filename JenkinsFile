@@ -90,13 +90,12 @@ pipeline {
 						   echo " Snowsql execution ${exec_sql}"
 						   echo "${exec_sql}" >> snow_sql_output.log  
 						  fi
-						''')
+							
+					echo "***************************************************"
+					done < ${WORKSPACE}/committed_files.txt
+					''')
 					}
 				}
-				
-				sh('''		
-                  echo "***************************************************"
-                done < ${WORKSPACE}/committed_files.txt
                 echo "---------------------------------------"
                 
                 LOG_READ=$(cat snow_sql_output.log)
