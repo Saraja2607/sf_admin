@@ -1,1 +1,1 @@
-create schema cmt_finance; --test
+create or replace schema cmt_mkt; --test
